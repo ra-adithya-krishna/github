@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Slot - ChargeFinder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 40px;
+    }
+    .form-container {
+      background: white;
+      padding: 30px;
+      max-width: 500px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .time-container, .duration-container {
+      display: flex;
+      gap: 10px;
+    }
+    .time-container input,
+    .time-container select,
+    .duration-container input {
+      width: 50%;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #3498db;
+    }
+    .message {
+      text-align: center;
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>Book Slot</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 20px;">
+      💡 Charging Rate: ₹50 per hour | Payment required to confirm booking
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      
+      <label>Station Name</label>
+      <input type="text" name="station_name" value="{{ station_name }}" readonly>
+
+
+      <label>Select Date</label>
+      <input type="date" name="date" required>
+
+      <label>Select Time</label>
+      <div class="time-container">
+          <select name="time" required>
+        <option value="">select time</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+        </select>
+
+
+
+        <select name="ampm" required>
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+
+      <label>Select Duration</label>
+      <div class="duration-container">  <select name="duration" required id="duration">
+        <option value="">select duration</option>
+          <option value="1">1 hour - ₹50</option>
+          <option value="1.5">1.5 hours - ₹75</option>
+          <option value="2">2 hours - ₹100</option>
+          <option value="2.5">2.5 hours - ₹125</option>
+          <option value="3">3 hours - ₹150</option>
+          <option value="3.5">3.5 hours - ₹175</option>
+          <option value="4">4 hours - ₹200</option>
+          <option value="4.5">4.5 hours - ₹225</option>
+          <option value="5">5 hours - ₹250</option>
+          <option value="5.5">5.5 hours - ₹275</option>
+          <option value="6">6 hours - ₹300</option>
+        </select>
+      </div>
+
+       <button type="submit">Proceed to Payment</button>
+    </form> 
+
+    {% if success %}
+      <p class="message">{{ success }}</p>
+    {% endif %}
+  </div>
+</body>
+</html>

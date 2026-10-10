@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - View Bookings</title>
+  <style>
+  
+    
+    .summary {
+      text-align: center;
+      font-size: 18px;
+      margin: 20px auto;
+      font-weight: bold;
+    }
+     
+
+    nav {
+      background-color: #1e88e5;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    nav .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav ul li {
+      margin-left: 20px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    nav ul li a:hover {
+      text-decoration: underline;
+    }
+
+    .header {
+      background-color: #1e88e5;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .main {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    .card h3 {
+      color: #1e88e5;
+      margin-top: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      color: white;
+      background-color: #1e88e5;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background-color: #3498db;
+    }
+
+    .btn-danger {
+      background-color: #e53935;
+    }
+
+    .btn-danger:hover {
+      background-color: #f44336;
+    }
+  </style>
+</head>
+<body>
+     <nav>
+    <div class="logo">ChargeFinder (KERALA)</div>
+    <ul>
+      <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'view_bookings' %}">View Bookings</a></li>
+      <!-- <li><a href="{% url 'manage_stations' %}">Manage Stations</a></li> -->
+      <li><a href="{% url 'manage_users' %}">Manage Users</a></li>
+      <!-- <li><a href="#">Reviews & Feedback</a></li> -->
+    
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+  </nav>
+ <div class="header">
+     User Bookings - ChargeFinder
+  </div>
+
+  <div class="summary">
+    Total Bookings: {{ bookings|length }}
+  </div>
+
+  <table>
+    <tr>
+      <th>User</th>
+      <th>Station</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Duration</th>
+    </tr>
+    {% for booking in bookings %}
+    <tr>
+      <td>{{ booking.user.username }}</td>
+      <td>{{ booking.station_name }}</td>
+      <td>{{ booking.date }}</td>
+      <td>{{ booking.time }}</td>
+      <td>{{ booking.duration }} hrs</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5">No bookings yet.</td></tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

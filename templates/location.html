@@ -1,0 +1,626 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Find Charging Station - ChargeFinder</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <style>
+    #map { height: 500px; margin-top: 15px; }
+    .station {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f1f1f1;
+      border-radius: 8px;
+    }
+    .direction-btn a {
+      text-decoration: none;
+      color: white;
+      background: #0a7cff;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+    .direction-btn {
+      display: inline-block;
+      margin-right: 8px;
+      margin-top: 6px;
+    }
+    #stationDetailsCard {
+      display: none;
+      background: #e0f7fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border: 2px solid #00acc1;
+    }
+    .detail-row {
+      margin-bottom: 8px;
+      padding: 5px 0;
+    }
+    .detail-label {
+      font-weight: bold;
+      color: #006064;
+    }
+    .close-details {
+      float: right;
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">ChargeFinder (KERALA)</div>
+  <ul>
+    <li><a href="{% url 'home' %}">Home</a></li>
+    
+    <li><a href="{% url 'about' %}">About Us</a></li>
+    <li><a href="{% url 'contact' %}">Contact Us</a></li>
+    <li><a href="{% url 'view_booked_slots' %}">View Booked Slots</a></li>
+
+
+     <li><a href="{% url 'logout' %}">Logout</a></li>
+  </ul>
+</nav>
+
+<div class="location-page">
+  <!-- STATION DETAILS CARD -->
+  <div id="stationDetailsCard">
+    <button class="close-details" onclick="closeDetails()">×</button>
+    <h2 id="detailName">Station Name</h2>
+    
+    <div class="detail-row">
+      <span class="detail-label">Distance:</span> <span id="detailDist">N/A</span> km
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">Operator:</span> <span id="detailOperator">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">Address:</span> <span id="detailAddress">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">City:</span> <span id="detailCity">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">District:</span> <span id="detailDistrict">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">State:</span> <span id="detailState">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">Charger Type:</span> <span id="detailType">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">Tariff:</span> <span id="detailCost">N/A</span> per unit
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">Coordinates:</span> <span id="detailCoords">N/A</span>
+    </div>
+    
+    <div class="detail-row">
+      <span class="detail-label">Station ID:</span> <span id="detailSlug">N/A</span>
+    </div>
+    
+    <div style="margin-top: 15px;">
+      <div class="direction-btn">
+        <a id="detailMapLink" href="https://maps.google.com/?q=${station.lat},${station.lon}" target="_blank">Get Directions</a>
+      </div>
+      <div class="direction-btn">
+        <a id="detailBookLink" href="/book-slot/?name=${encodeURIComponent(station.name)}" target="_blank">Book Slot</a>
+      </div>
+       <div class="direction-btn">
+        <a id="detailReviewLink" href="/station/${station.slug}/review/" target="_blank">Reviews</a>
+      </div> 
+      
+      
+    </div>
+  </div>
+
+  <!-- MAP SECTION -->
+  <div class="map-section">
+    <h2>Enter current Location</h2>
+    <input type="text" id="locationInput" placeholder="Enter location in Kerala...">
+    <button onclick="searchLocation()">Find Stations</button>
+    <div id="map"></div>
+  </div>
+
+  <!-- STATIONS LIST -->
+  <div class="stations-list" id="stationsList">
+    <h2>Nearest Locations</h2>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+  const djangoStations = [
+    {% for s in stations %}
+    {
+      name: "{{ s.station_name|escapejs }}",
+      slug: "{{ s.id|escapejs }}",
+      operator: "{{ s.operator|escapejs }}",
+      address: "{% if s.address %}{{ s.address|escapejs }}{% else %}N/A{% endif %}",
+      city: "{% if s.city %}{{ s.city|escapejs }}{% else %}N/A{% endif %}",
+      district: "{% if s.district %}{{ s.district|escapejs }}{% else %}N/A{% endif %}",
+      state: "{% if s.state %}{{ s.state|escapejs }}{% else %}N/A{% endif %}",
+      lat: {{ s.latitude|default:0 }},
+      lon: {{ s.longitude|default:0 }},
+      charger_type: "{% if s.charger_type %}{{ s.charger_type|escapejs }}{% else %}N/A{% endif %}",
+      tariff: "{% if s.tariff %}{{ s.tariff }}{% else %}0.00{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  let map = L.map('map', {
+    minZoom: 7,
+    maxZoom: 18,
+    maxBounds: [
+      [7.0, 74.5],
+      [12.9, 77.5]
+    ],
+    maxBoundsViscosity: 1.0
+  }).setView([10.5, 76.3], 8);
+
+  let userMarker;
+  let routeControl;
+  let stationMarkers = [];
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  function searchLocation() {
+    const location = document.getElementById("locationInput").value;
+    
+    if (!location.trim()) {
+      alert("Please enter a location!");
+      return;
+    }
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}, Kerala`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.length === 0) {
+          alert("Location not found in Kerala!");
+          return;
+        }
+
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+
+        // Clear previous markers and routes
+        if (userMarker) map.removeLayer(userMarker);
+        if (routeControl) map.removeControl(routeControl);
+        stationMarkers.forEach(marker => map.removeLayer(marker));
+        stationMarkers = [];
+
+        // Add user location marker
+        userMarker = L.marker([lat, lon], {
+          icon: L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854901.png',
+            iconSize: [35, 35]
+          })
+        })
+          .addTo(map)
+          .bindPopup("📍 You are here")
+          .openPopup();
+
+        map.setView([lat, lon], 12);
+
+        // Get nearest stations (within 50km, top 10)
+        const nearestStations = getSortedStations(lat, lon)
+          .filter(s => s.distance <= 50)
+          .slice(0, 10);
+
+        // Add station markers
+        nearestStations.forEach((station, index) => {
+          const stationMarker = L.marker([station.lat, station.lon], {
+            icon: L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/2912/2912167.png',
+              iconSize: [30, 30]
+            })
+          })
+            .addTo(map)
+            .bindPopup(`
+              <div>
+                <strong>${station.name}</strong><br>
+                📍 ${station.address}<br>
+                ⚡ ${station.charger_type}<br>
+                💰 ${station.tariff}/unit<br>
+                📏 ${station.distance.toFixed(2)} km away
+              </div>
+            `);
+          
+          stationMarkers.push(stationMarker);
+        });
+
+        // Add route to nearest station
+        if (nearestStations.length > 0) {
+          routeControl = L.Routing.control({
+            waypoints: [
+              L.latLng(lat, lon),
+              L.latLng(nearestStations[0].lat, nearestStations[0].lon)
+            ],
+            routeWhileDragging: false,
+            show: false,
+            addWaypoints: false,
+            draggableWaypoints: false,
+            createMarker: () => null
+          }).addTo(map);
+        }
+
+        // Update stations list
+        displayStationsList(nearestStations);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert("Error searching for location. Please try again.");
+      });
+  }
+
+  function displayStationsList(stations) {
+    const listDiv = document.getElementById("stationsList");
+    listDiv.innerHTML = `<h2>Nearest Charging Stations (${stations.length})</h2>`;
+    
+    stations.forEach((station, index) => {
+      const stationIndex = djangoStations.findIndex(s => s.name === station.name);
+      listDiv.innerHTML += `
+        <div class="station">
+          <h3>⚡ ${station.name}</h3>
+          <p><strong>📍 Distance:</strong> ${station.distance.toFixed(2)} km</p>
+
+          <div class="direction-btn">
+            <a href="#" onclick='showDetails(${stationIndex}, ${station.distance})'>📋 Details</a>
+          </div>
+          <div class="direction-btn">
+            <a href="https://maps.google.com/?q=${station.lat},${station.lon}" target="_blank">🗺️ Directions</a>
+          </div>
+          <div class="direction-btn">
+            <a href="/book-slot/?name=${encodeURIComponent(station.name)}" target="_blank">📅 Book Slot</a>
+          </div>
+          <div class="direction-btn">
+            <a href="/station/${station.slug}/review/" target="_blank">⭐ Reviews</a>
+          </div>
+         
+         
+
+        </div>
+      `;
+    });
+  }
+
+  function showDetails(index, distance = null) {
+    const station = djangoStations[index];
+    
+    // Populate all available details
+    document.getElementById("detailName").textContent = station.name;
+    document.getElementById("detailDist").textContent = distance ? distance.toFixed(2) : "N/A";
+    document.getElementById("detailOperator").textContent = station.operator || "Not specified";
+    document.getElementById("detailAddress").textContent = station.address || "Not specified";
+    document.getElementById("detailCity").textContent = station.city || "Not specified";
+    document.getElementById("detailDistrict").textContent = station.district || "Not specified";
+    document.getElementById("detailState").textContent = station.state || "Not specified";
+    document.getElementById("detailType").textContent = station.charger_type || "Not specified";
+    document.getElementById("detailCost").textContent = station.tariff || "Not specified";
+    document.getElementById("detailCoords").textContent = `${station.lat}, ${station.lon}`;
+    document.getElementById("detailSlug").textContent = station.slug || "Not specified";
+    
+    // Update links
+    document.getElementById("detailMapLink").href = `https://maps.google.com/?q=${station.lat},${station.lon}`;
+    document.getElementById("detailBookLink").href = `/book-slot/?name=${encodeURIComponent(station.name)}`;
+    console.log(station.slug);
+    
+    document.getElementById("detailReviewLink").href = `/station/${station.slug}/review/`;
+    
+    // Show the details card
+    document.getElementById("stationDetailsCard").style.display = "block";
+    
+    // Scroll to details card
+    document.getElementById("stationDetailsCard").scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
+
+  function closeDetails() {
+    document.getElementById("stationDetailsCard").style.display = "none";
+  }
+
+  function getSortedStations(userLat, userLon) {
+    return djangoStations.map(s => ({
+      ...s,
+      distance: getDistance(userLat, userLon, s.lat, s.lon)
+    })).sort((a, b) => a.distance - b.distance);
+  }
+
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // Initialize map with all stations if no search is performed
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add all stations to map initially (optional)
+    djangoStations.forEach(station => {
+      L.marker([station.lat, station.lon], {
+        icon: L.icon({
+          iconUrl: 'https://cdn-icons-png.flaticon.com/512/2912/2912167.png',
+          iconSize: [25, 25]
+        })
+      })
+        .addTo(map)
+        .bindPopup(`
+          <div>
+            <strong>${station.name}</strong><br>
+            📍 ${station.address}<br>
+            ⚡ ${station.charger_type}<br>
+            💰 ${station.tariff}/unit
+          </div>
+        `);
+    });
+  });
+</script>
+
+</body>
+</html>
+<!-- {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Find Charging Station - ChargeFinder</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <style>
+    #map { height: 500px; margin-top: 15px; }
+    .station {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f1f1f1;
+      border-radius: 8px;
+    }
+    .direction-btn a {
+      text-decoration: none;
+      color: white;
+      background: #0a7cff;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+    .direction-btn {
+      display: inline-block;
+      margin-right: 8px;
+      margin-top: 6px;
+    }
+    #stationDetailsCard {
+      display: none;
+      background: #e0f7fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">ChargeFinder (KERALA)</div>
+  <ul>
+    <li><a href="{% url 'home' %}">Home</a></li>
+    <li><a href="{% url 'login' %}">Login</a></li>
+    <li><a href="#">About Us</a></li>
+    <li><a href="#">Contact Us</a></li>
+  </ul>
+</nav>
+
+<div class="location-page">
+  <div id="stationDetailsCard">
+    <h2 id="detailName">Station Name</h2>
+    <p><strong>Distance:</strong> <span id="detailDist"></span> km</p>
+    <p><strong>Contact:</strong> <span id="detailContact"></span></p>
+    <p><strong>Status:</strong> <span id="detailOpen"></span></p>
+    <p><strong>Available Slots:</strong> <span id="detailSlots"></span></p>
+    <p><strong>Time:</strong> <span id="detailTime"></span></p>
+    <p><strong>Charger Type:</strong> <span id="detailType"></span></p>
+    <p><strong>Cost:</strong> <span id="detailCost"></span></p>
+    <div class="direction-btn">
+      <a id="detailMapLink" href="#" target="_blank">Direction</a>
+    </div>
+    <div class="direction-btn">
+      <a id="detailBookLink" href="#" target="_blank">Book Slot</a>
+    </div>
+  </div>
+
+  <div class="map-section">
+    <h2>Enter current Location</h2>
+    <input type="text" id="locationInput" placeholder="Enter location...">
+    <button onclick="searchLocation()">Find Stations</button>
+    <div id="map"></div>
+  </div>
+
+  <div class="stations-list" id="stationsList">
+    <h2>Nearest Locations</h2>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+  const djangoStations = [
+    {% for s in stations %}
+    {
+      name: "{{ s.station_name|escapejs }}",
+      slug: "{{ s.slug|escapejs }}",
+      operator: "{{ s.operator|default:'N/A'|escapejs }}",
+      address: "{{ s.address|escapejs }}",
+      city: "{{ s.city|escapejs }}",
+      district: "{{ s.district|escapejs }}",
+      state: "{{ s.state|escapejs }}",
+      lat: {{ s.latitude }},
+      lon: {{ s.longitude }},
+      charger_type: "{{ s.charger_type|escapejs }}",
+      cost: "{{ s.tariff|default:'0.00' }}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+
+  let map = L.map('map', {
+    minZoom: 7,
+    maxZoom: 13,
+    maxBounds: [
+      [7.0, 74.5],
+      [12.9, 77.5]
+    ],
+    maxBoundsViscosity: 1.0
+  }).setView([10.5, 76.3], 8);
+
+  let userMarker;
+  let routeControl;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  function searchLocation() {
+    const location = document.getElementById("locationInput").value;
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${location}, Kerala`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.length === 0) {
+          alert("Location not found in Kerala!");
+          return;
+        }
+
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+
+        if (userMarker) map.removeLayer(userMarker);
+        if (routeControl) map.removeControl(routeControl);
+
+        userMarker = L.marker([lat, lon])
+          .addTo(map)
+          .bindPopup("You are here")
+          .openPopup();
+
+        map.setView([lat, lon], 12);
+
+        const nearestStations = getSortedStations(lat, lon).filter(s => s.distance <= 50).slice(0, 5);
+
+        nearestStations.forEach(station => {
+          L.marker([station.lat, station.lon], {
+            icon: L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png',
+              iconSize: [30, 30]
+            })
+          }).addTo(map).bindPopup(`${station.name}`);
+        });
+
+        routeControl = L.Routing.control({
+          waypoints: [
+            L.latLng(lat, lon),
+            L.latLng(nearestStations[0].lat, nearestStations[0].lon)
+          ],
+          routeWhileDragging: false,
+          show: false,
+          addWaypoints: false,
+          draggableWaypoints: false,
+          createMarker: () => null
+        }).addTo(map);
+
+        const listDiv = document.getElementById("stationsList");
+        listDiv.innerHTML = `<h2>Nearest Locations</h2>`;
+        nearestStations.forEach(station => {
+          const index = djangoStations.findIndex(s => s.name === station.name);
+          listDiv.innerHTML += `
+            <div class="station">
+              <h3>${station.name}</h3>
+              <p><strong>Distance:</strong> ${station.distance.toFixed(2)} km</p>
+              <div class="direction-btn">
+                <a href="#" onclick='showDetails(${index})'>Details</a>
+              </div>
+              <div class="direction-btn">
+                <a href="https://maps.google.com/?q=${station.lat},${station.lon}" target="_blank">Direction</a>
+              </div>
+              <div class="direction-btn">
+                <a href="/book-slot/?name=${encodeURIComponent(station.name)}" target="_blank">Book Slot</a>
+              </div>
+               <div class="direction-btn">
+        <a href="/station/${station.slug}/review/" target="_blank">Review</a>
+
+
+
+
+
+              </div>
+            </div>
+          `;
+        });
+      });
+  }
+
+  function showDetails(index) {
+    const station = djangoStations[index];
+    document.getElementById("detailName").textContent = station.name;
+    document.getElementById("detailDist").textContent = station.distance?.toFixed(2) ?? "N/A";
+    document.getElementById("detailContact").textContent = station.operator;
+    document.getElementById("detailOpen").textContent = "N/A"; // Optional placeholder
+    document.getElementById("detailSlots").textContent = "N/A"; // Optional placeholder
+    document.getElementById("detailTime").textContent = "N/A"; // Optional placeholder
+    document.getElementById("detailType").textContent = station.charger_type;
+    document.getElementById("detailCost").textContent = station.cost;
+    document.getElementById("detailMapLink").href = `https://maps.google.com/?q=${station.lat},${station.lon}`;
+    document.getElementById("detailBookLink").href = `/book-slot/?name=${encodeURIComponent(station.name)}`;
+    document.getElementById("stationDetailsCard").style.display = "block";
+  }
+
+
+  function getSortedStations(userLat, userLon) {
+    return djangoStations.map(s => ({
+      ...s,
+      distance: getDistance(userLat, userLon, s.lat, s.lon)
+    })).sort((a, b) => a.distance - b.distance);
+  }
+
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+</script>
+
+</body>
+</html> -->

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - ChargeFinder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 50px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            font-size: 5em;
+            color: #28a745;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease-out 0.3s both;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .success-title {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .success-message {
+            font-size: 1.2em;
+            color: #6c757d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .booking-details {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 5px solid #28a745;
+        }
+
+        .booking-details h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .detail-label {
+            color: #6c757d;
+        }
+
+        .detail-value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,123,255,0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(108,117,125,0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40,167,69,0.3);
+        }
+
+        .confirmation-note {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            color: #155724;
+        }
+
+        .confirmation-note h4 {
+            margin-bottom: 10px;
+            color: #155724;
+        }
+
+        .confirmation-note p {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .success-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .success-title {
+                font-size: 2em;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">✅</div>
+        
+        <h1 class="success-title">Payment Successful!</h1>
+        
+        <p class="success-message">
+            Your charging station slot has been successfully booked and payment has been processed. 
+            You will receive a confirmation email shortly.
+        </p>
+
+        <div class="booking-details">
+            <h3>📋 Booking Confirmation</h3>
+            <div class="detail-item">
+                <span class="detail-label">Booking ID:</span>
+                <span class="detail-value">#CF-{{ "now"|date:"YmdHis" }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Payment Status:</span>
+                <span class="detail-value" style="color: #28a745;">✅ Paid</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Transaction Time:</span>
+                <span class="detail-value">{{ "now"|date:"M d, Y - H:i" }}</span>
+            </div>
+        </div>
+
+        <div class="confirmation-note">
+            <h4>📧 What's Next?</h4>
+            <p>• You will receive a booking confirmation email</p>
+            <p>• Arrive at the station 10 minutes before your scheduled time</p>
+            <p>• Bring your vehicle and charging cable</p>
+            <p>• Contact station operator if you need assistance</p>
+        </div>
+
+        <div class="action-buttons">
+            <a href="{% url 'view_booked_slots' %}" class="btn btn-primary">
+                📅 View My Bookings
+            </a>
+            <a href="{% url 'home' %}" class="btn btn-secondary">
+                🏠 Back to Home
+            </a>
+            <a href="{% url 'location' %}" class="btn btn-success">
+                📍 Find More Stations
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-redirect to bookings after 10 seconds (optional)
+            setTimeout(function() {
+                const autoRedirect = confirm('Would you like to view your bookings now?');
+                if (autoRedirect) {
+                    window.location.href = "{% url 'view_booked_slots' %}";
+                }
+            }, 10000);
+        });
+
+        // Add print functionality
+        function printConfirmation() {
+            window.print();
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                window.location.href = "{% url 'home' %}";
+            }
+        });
+    </script>
+</body>
+</html>

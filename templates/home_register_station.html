@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register Home Charging Station - ChargeFinder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #eef2f3;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 50px auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #1e88e5;
+      margin-bottom: 25px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 6px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      background-color: #1e88e5;
+      color: white;
+      padding: 12px;
+      margin-top: 25px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1565c0;
+    }
+
+    .success {
+      text-align: center;
+      color: green;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Register Your Home Charging Station</h2>
+    <form method="post">
+      {% csrf_token %}
+
+      <label>Station Name</label>
+      <input type="text" name="station_name" placeholder="Eg: John's EV Station" required>
+
+      <label>Location</label>
+      <textarea name="location" placeholder="Full address with landmark" required></textarea>
+
+      <label>Hourly Rate (₹)</label>
+      <input type="number" name="rate" step="0.01" placeholder="Eg: 50.00" required>
+
+      <label>Charger Type</label>
+      <select name="charger_type" required>
+        <option value="">Select Type</option>
+        <option value="AC">AC</option>
+        <option value="DC">DC</option>
+        <option value="AC & DC">Both AC & DC</option>
+      </select>
+
+      <label>Availability Hours</label>
+      <input type="text" name="availability" placeholder="Eg: 9 AM - 9 PM" required>
+
+      <label>Contact Number</label>
+      <input type="tel" name="contact" pattern="[0-9]{10}" placeholder="Enter 10-digit mobile number" required>
+
+      <label>Charger Description</label>
+      <textarea name="description" placeholder="Eg: 7kW wall-mounted AC charger installed in private garage."></textarea>
+
+      <!-- <label>Upload Photo (optional)</label>
+      <input type="file" name="image"> -->
+
+      <button type="submit">Submit Station for Review</button>
+
+      {% if success %}
+        <p class="message ">{{ success }}</p>
+      {% endif %}
+    </form>
+  </div>
+
+</body>
+</html>

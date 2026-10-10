@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Razorpay Payment - ChargeFinder</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .booking-summary {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #28a745;
+            text-align: left;
+        }
+
+        .booking-summary h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #28a745;
+        }
+
+        .razorpay-info {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .razorpay-info h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .razorpay-info p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .payment-methods {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .payment-method-badge {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .pay-button {
+            width: 100%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+        }
+
+        .pay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40,167,69,0.3);
+        }
+
+        .pay-button:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .back-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            background: #5a6268;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .payment-methods {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Razorpay Payment</h1>
+            <p>Secure payment processing</p>
+        </div>
+
+        <div class="content">
+            <div class="booking-summary">
+                <h3>📋 Booking Summary</h3>
+                <div class="summary-item">
+                    <span>Station:</span>
+                    <span>{{ booking_data.station_name }}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Date:</span>
+                    <span>{{ booking_data.date }}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Time:</span>
+                    <span>{{ booking_data.time }}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Duration:</span>
+                    <span>{{ booking_data.duration }} hours</span>
+                </div>
+                <div class="summary-item">
+                    <span>Amount:</span>
+                    <span>₹{{ booking_data.amount }}</span>
+                </div>
+            </div>
+
+            <div class="razorpay-info">
+                <h3>💳 Payment Options</h3>
+                <p>Click "Pay Now" to open Razorpay's secure payment gateway where you can pay using:</p>
+                <div class="payment-methods">
+                    <div class="payment-method-badge">💳 Credit/Debit Cards</div>
+                    <div class="payment-method-badge">📱 UPI</div>
+                    <div class="payment-method-badge">🏦 Net Banking</div>
+                    <div class="payment-method-badge">💰 Digital Wallets</div>
+                </div>
+                <p style="font-size: 0.9em; color: #666;">
+                    <strong>Secure:</strong> Your payment is protected by Razorpay's 256-bit SSL encryption
+                </p>
+            </div>
+
+            <button class="pay-button" onclick="openRazorpay()" id="payNowBtn">
+                💳 Pay ₹{{ booking_data.amount }}
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Opening payment gateway...</p>
+            </div>
+
+            <a href="{% url 'payment' %}" class="back-button">
+                ← Back to Payment Options
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Razorpay configuration
+        const options = {
+            "key": "{{ razorpay_key_id }}",
+            "amount": {{ razorpay_amount }},
+            "currency": "{{ razorpay_currency }}",
+            "name": "ChargeFinder",
+            "description": "EV Charging Station Booking",
+            "image": "https://via.placeholder.com/150x150/28a745/ffffff?text=CF",
+            "order_id": "{{ razorpay_order_id }}",
+            "callback_url": "{{ callback_url }}",
+            "prefill": {
+                "name": "{{ user.first_name|default:user.username }}",
+                "email": "{{ user.email }}",
+                "contact": "9999999999"
+            },
+            "notes": {
+                "booking_id": "CF-{{ booking_data.date|date:'Ymd' }}{{ user.id }}",
+                "station": "{{ booking_data.station_name }}"
+            },
+            "theme": {
+                "color": "#28a745"
+            },
+            "handler": function (response) {
+                // This will be handled by the callback URL
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('payNowBtn').style.display = 'none';
+                
+                // Submit the payment details to callback
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{{ callback_url }}";
+                
+                // Add CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+                
+                // Add Razorpay response data
+                const paymentIdInput = document.createElement('input');
+                paymentIdInput.type = 'hidden';
+                paymentIdInput.name = 'razorpay_payment_id';
+                paymentIdInput.value = response.razorpay_payment_id;
+                form.appendChild(paymentIdInput);
+                
+                const orderIdInput = document.createElement('input');
+                orderIdInput.type = 'hidden';
+                orderIdInput.name = 'razorpay_order_id';
+                orderIdInput.value = response.razorpay_order_id;
+                form.appendChild(orderIdInput);
+                
+                const signatureInput = document.createElement('input');
+                signatureInput.type = 'hidden';
+                signatureInput.name = 'razorpay_signature';
+                signatureInput.value = response.razorpay_signature;
+                form.appendChild(signatureInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            },
+            "modal": {
+                "ondismiss": function() {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('payNowBtn').style.display = 'block';
+                }
+            }
+        };
+
+        function openRazorpay() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('payNowBtn').style.display = 'none';
+            
+            setTimeout(() => {
+                const rzp = new Razorpay(options);
+                rzp.open();
+            }, 1000);
+        }
+
+        // Add CSRF token for form submissions
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = "{{ csrf_token }}";
+            const metaTag = document.createElement('meta');
+            metaTag.name = 'csrfmiddlewaretoken';
+            metaTag.content = csrfToken;
+            document.head.appendChild(metaTag);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Charging Stations - ChargeFinder</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      color: #333;
+    }
+
+    nav {
+      background-color: #1e88e5;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    nav .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+
+    nav ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+    }
+
+    nav ul li {
+      margin-left: 20px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    nav ul li a:hover {
+      text-decoration: underline;
+    }
+
+    .header {
+      background-color: #1e88e5;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 28px;
+    }
+
+    .main {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    .card h3 {
+      color: #1e88e5;
+      margin-top: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      color: white;
+      background-color: #1e88e5;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      background-color: #3498db;
+    }
+
+    .btn-danger {
+      background-color: #e53935;
+    }
+
+    .btn-danger:hover {
+      background-color: #f44336;
+    }
+
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">ChargeFinder (KERALA)</div>
+    <ul>
+      <li><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+      <li><a href="{% url 'view_bookings' %}">View Bookings</a></li>
+      <li><a href="{% url 'manage_stations' %}">Manage Stations</a></li>
+      <li><a href="{% url 'manage_users' %}">Manage Users</a></li>
+      <!-- <li><a href="#">Reviews & Feedback</a></li> -->
+    
+      <li><a href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="header">
+    <h1>Manage Charging Stations</h1>
+  </div>
+
+  <div class="main">
+
+    <div class="card">
+      <h2>Add New Charging Station</h2>
+      <form method="post" action="{% url 'manage_stations' %}">
+        {% csrf_token %}
+        <label>Station Name:</label>
+        <input type="text" name="station_name" required>
+
+        <label>Location:</label>
+        <input type="text" name="location" required>
+
+        <label>Owner Name:</label>
+        <input type="text" name="owner" required>
+
+        <label>Contact Info:</label>
+<input type="text" name="contact_info" required>
+
+
+        <label>Status:</label>
+        <select name="status" required>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+        </select> 
+
+        <button type="submit" class="btn">Add Station</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>All Charging Stations</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Station Name</th>
+            <th>Location</th>
+             <th>Status</th>
+            <th>Owner</th>
+                   <th>contact</th>
+
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for station in stations %}
+          <tr>
+            <td>{{ station.station_name }}</td>
+            <td>{{ station.location }}</td>
+            <td>{{ station.status }}</td>
+            <td>{{ station.owner }}</td>
+             <td>{{ station.contact_info }}</td>
+            <td>
+              <a href="{% url 'edit_station_by_name' station.station_name %}" class="btn">Edit</a>
+              <a href="{% url 'delete_station_by_name' station.station_name %}" class="btn btn-danger"
+                 onclick="return confirm('Delete {{ station.station_name }}?');">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" style="text-align: center;">No stations found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>

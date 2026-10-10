@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Map with Custom Search</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 100vh;
+    }
+
+    .custom-search {
+      position: absolute;
+      top: 10px;
+      left: 50px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .custom-search input {
+      padding: 5px;
+      width: 200px;
+    }
+
+    .custom-search button {
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="custom-search">
+  <input type="text" id="locationInput" placeholder="Enter location" />
+  <button onclick="searchLocation()">Search</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  // Initialize the Leaflet map
+  const map = L.map('map').setView([51.505, -0.09], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Function to redirect to Google Maps with the entered location
+  function searchLocation() {
+    const query = document.getElementById('locationInput').value.trim();
+    if (query) {
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      window.open(googleMapsUrl, '_blank');
+    }
+  }
+
+  // Allow Enter key to trigger the search
+  document.getElementById('locationInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      searchLocation();
+    }
+  });
+</script>
+
+</body>
+</html>

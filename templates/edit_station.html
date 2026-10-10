@@ -1,0 +1,91 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Charging Station - ChargeFinder</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+    }
+
+    .header {
+      background-color: #1e88e5;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      margin: 40px auto;
+      max-width: 600px;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #1e88e5;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      border: none;
+      color: white;
+      background-color: #1e88e5;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .btn:hover {
+      background-color: #1565c0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Edit Charging Station</h1>
+  </div>
+
+  <div class="container">
+    <form method="post">
+      {% csrf_token %}
+     <label>Station Name:</label>
+        <input type="text" name="station_name" required>
+
+        <label>Location:</label>
+        <input type="text" name="location" required>
+
+        <label>Owner Name:</label>
+        <input type="text" name="owner" required>
+
+        <label>Status:</label>
+        <select name="status" required>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+        </select>
+
+        <button type="submit" class="btn">confirm edit</button>
+      </form>

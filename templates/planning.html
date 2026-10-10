@@ -1,0 +1,305 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EV Route Planner - ChargeFinder</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 0 20px;
+    }
+
+    h2 {
+      color: #333;
+      margin-top: 20px;
+    }
+
+    #map { height: 500px; margin-top: 15px; border-radius: 8px; }
+
+    .map-section input {
+      padding: 8px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 8px 14px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .station {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    .direction-btn a {
+      text-decoration: none;
+      color: white;
+      background: #0a7cff;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+
+    .direction-btn {
+      display: inline-block;
+      margin-right: 8px;
+      margin-top: 6px;
+    }
+
+    #stationDetailsCard {
+      display: none;
+      background: #e0f7fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .details-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .details-table td:first-child {
+      font-weight: bold;
+      width: 160px;
+    }
+
+    nav {
+      background-color: #007bff;
+      padding: 10px;
+      color: white;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+
+    nav .logo {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    nav ul {
+      list-style: none;
+      float: right;
+    }
+
+    nav ul li {
+      display: inline-block;
+      margin-left: 15px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">ChargeFinder (KERALA)</div>
+  <ul>
+    <li><a href="{% url 'home' %}">Home</a></li>
+    
+    <li><a href="{% url 'about' %}">About Us</a></li>
+    <li><a href="{% url 'contact' %}">Contact Us</a></li>
+    <li><a href="{% url 'view_booked_slots' %}">View Booked Slots</a></li>
+
+
+     <li><a href="{% url 'logout' %}">Logout</a></li>
+  </ul>
+</nav>
+
+<div class="location-page">
+
+  <!-- Station Details Card -->
+  <div id="stationDetailsCard"> 
+    <h2>Station Details</h2>
+    <table class="details-table">
+      <tr><td>Station Name:</td><td id="detailName"></td></tr>
+      <tr><td>Distance:</td><td><span id="detailDist"></span> km</td></tr>
+      <tr><td>Contact:</td><td id="detailContact"></td></tr>
+      <tr><td>Status:</td><td id="detailOpen"></td></tr>
+      <tr><td>Available Slots:</td><td id="detailSlots"></td></tr>
+      <tr><td>Time:</td><td id="detailTime"></td></tr>
+    </table>
+    <div class="direction-btn">
+      <a id="detailMapLink" href="#" target="_blank">Direction</a>
+    </div>
+    <div class="direction-btn">
+      <a id="detailBookLink" href="#" target="_blank">Book Slot</a>
+    </div>
+  </div>
+
+  <!-- Route input + map -->
+  <div class="map-section">
+    <h2>Enter Start and Destination</h2>
+    <input type="text" id="startInput" placeholder="Enter start location...">
+    <input type="text" id="endInput" placeholder="Enter destination location...">
+    <button onclick="searchRoute()">Show Route & Stations</button>
+    <div id="map"></div>
+  </div>
+
+  <!-- Nearby stations list -->
+  <div class="stations-list" id="stationsList">
+    <h2>Nearest Stations within your route</h2>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+  const djangoStations = [
+    {% for s in stations %}
+    {
+      name: "{{ s.station_name|escapejs }}",
+      slug: "{{ s.id }}",
+      lat: {{ s.latitude }},
+      lon: {{ s.longitude }},
+      contact: "{{ s.operator|default:'N/A'|escapejs }}",
+      open: "Open",
+      slots: "{{ s.id }}",
+      opening_time: "{{ s.opening_time|time:'H:i'|default:'--:--' }}",
+      closing_time: "{{ s.closing_time|time:'H:i'|default:'--:--' }}"
+    },
+    {% endfor %}
+  ];
+
+  let map = L.map('map', {
+    minZoom: 7,
+    maxZoom: 13,
+    maxBounds: [[7.0, 74.5], [12.9, 77.5]],
+    maxBoundsViscosity: 1.0
+  }).setView([10.5, 76.3], 8);
+
+  let userRoute;
+  let globalStartLat, globalStartLon;
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  function searchRoute() {
+    const start = document.getElementById("startInput").value;
+    const end = document.getElementById("endInput").value;
+
+    if (!start || !end) {
+      alert("Please enter both start and destination locations.");
+      return;
+    }
+
+    Promise.all([
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${start}, Kerala`).then(res => res.json()),
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${end}, Kerala`).then(res => res.json())
+    ]).then(([startData, endData]) => {
+      if (!startData.length || !endData.length) {
+        alert("Invalid locations. Try again.");
+        return;
+      }
+
+      const startLat = parseFloat(startData[0].lat);
+      const startLon = parseFloat(startData[0].lon);
+      const endLat = parseFloat(endData[0].lat);
+      const endLon = parseFloat(endData[0].lon);
+
+      globalStartLat = startLat;
+      globalStartLon = startLon;
+
+      if (userRoute) map.removeControl(userRoute);
+
+      userRoute = L.Routing.control({
+        waypoints: [L.latLng(startLat, startLon), L.latLng(endLat, endLon)],
+        createMarker: () => null,
+        show: false,
+        routeWhileDragging: false,
+        addWaypoints: false,
+        draggableWaypoints: false
+      }).addTo(map);
+
+      userRoute.on('routesfound', function (e) {
+        const routeCoords = e.routes[0].coordinates;
+
+        const nearbyStations = djangoStations.filter(station => {
+          return routeCoords.some(coord => {
+            const d = getDistance(coord.lat, coord.lng, station.lat, station.lon);
+            return d <= 20;
+          });
+        });
+
+        const listDiv = document.getElementById("stationsList");
+        listDiv.innerHTML = `<h2>Nearest Stations within your Route</h2>`;
+
+        nearbyStations.forEach(station => {
+          L.marker([station.lat, station.lon], {
+            icon: L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/447/447031.png',
+              iconSize: [30, 30]
+            })
+          }).addTo(map).bindPopup(station.name);
+
+          const dist = getDistance(startLat, startLon, station.lat, station.lon).toFixed(2);
+
+          listDiv.innerHTML += `
+            <div class="station">
+              <h3>${station.name}</h3>
+              <p><strong>Approx Distance:</strong> ${dist} km from ${start}</p>
+              <div class="direction-btn"><a href="#" onclick='showDetails(${JSON.stringify({ ...station, distance: dist })})'>Details</a></div>
+              <div class="direction-btn"><a href="https://maps.google.com/?q=${station.lat},${station.lon}" target="_blank">Direction</a></div>
+              <div class="direction-btn"><a href="/book-slot/?name=${encodeURIComponent(station.name)}" target="_blank">Book Slot</a></div>
+              <div class="direction-btn"><a href="/station/${station.slug}/review/" target="_blank">Review</a></div>
+
+            </div>`;
+        });
+      });
+    });
+  }
+
+  function showDetails(station) {
+    document.getElementById("detailName").textContent = station.name;
+    document.getElementById("detailDist").textContent = parseFloat(station.distance).toFixed(2);
+    document.getElementById("detailContact").textContent = station.contact;
+    document.getElementById("detailOpen").textContent = station.open;
+    document.getElementById("detailSlots").textContent = station.slots;
+    document.getElementById("detailTime").textContent = `${station.opening_time} - ${station.closing_time}`;
+    document.getElementById("detailMapLink").href = `https://maps.google.com/?q=${station.lat},${station.lon}`;
+    document.getElementById("detailBookLink").href = `/book-slot/?name=${encodeURIComponent(station.name)}`;
+    document.getElementById("stationDetailsCard").style.display = "block";
+  }
+
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+</script>
+
+</body>
+</html>
+
